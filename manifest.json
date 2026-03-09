@@ -1,0 +1,17 @@
+{
+  "name": "Expense Tracker Pro",
+  "short_name": "Expenses",
+  "description": "Manage your finances easily on your phone",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

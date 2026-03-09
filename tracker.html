@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <title>Expense Tracker Pro</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes popScale {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+                color: #c7d2fe;
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .animate-pop {
+            animation: popScale 0.4s ease-out;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes toastIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes toastOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        .toast-enter {
+            animation: toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .toast-exit {
+            animation: toastOut 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 1023px) {
+
+            #tab-cards,
+            #tab-chart,
+            #tab-form,
+            #tab-history {
+                display: none;
+            }
+
+            body[data-tab="dashboard"] #tab-cards,
+            body[data-tab="dashboard"] #tab-chart {
+                display: block;
+                animation: fadeUp 0.3s ease-out forwards;
+            }
+
+            body[data-tab="add"] #tab-form {
+                display: block;
+                animation: fadeUp 0.3s ease-out forwards;
+            }
+
+            body[data-tab="history"] #tab-history {
+                display: flex;
+                animation: fadeUp 0.3s ease-out forwards;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            #tab-cards {
+                display: grid !important;
+            }
+
+            #tab-chart,
+            #tab-form,
+            #tab-history {
+                display: flex !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-indigo-200 pb-24 lg:pb-12"
+    data-tab="dashboard">
+
+    <div class="h-1.5 bg-indigo-600 w-full fixed top-0 z-50"></div>
+
+    <div id="install-banner"
+        class="hidden bg-indigo-900 text-white px-4 py-3 flex justify-between items-center shadow-md animate-slide-in mt-1.5">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-download text-indigo-300"></i>
+            <span class="text-sm font-medium">Install App on your Home Screen</span>
+        </div>
+        <button id="install-btn"
+            class="bg-indigo-500 hover:bg-indigo-400 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-colors">Install</button>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 lg:py-10">
+        <header class="mb-6 lg:mb-10 text-center" style="animation: fadeUp 0.4s ease-out forwards;">
+            <h1 class="text-2xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">Expense Tracker</h1>
+            <p class="text-slate-500 mt-1 text-sm lg:text-base font-medium">Manage your finances like a pro</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-8">
+            <div id="tab-cards" class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
+                <div
+                    class="bg-indigo-600 rounded-3xl p-6 text-white shadow-xl shadow-indigo-200/50 relative overflow-hidden">
+                    <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white opacity-10 blur-xl"></div>
+                    <h3 class="text-indigo-100 text-xs font-semibold uppercase tracking-wider mb-1">Total Balance</h3>
+                    <h2 class="text-3xl lg:text-4xl font-bold mt-1 transition-colors" id="total-balance">₹0.00</h2>
+                </div>
+                <div
+                    class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Income</h3>
+                        <h2 class="text-xl lg:text-2xl font-bold mt-1 text-slate-800" id="total-income">₹0.00</h2>
+                    </div>
+                    <div
+                        class="bg-emerald-50 text-emerald-500 w-12 h-12 rounded-2xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-arrow-trend-up"></i>
+                    </div>
+                </div>
+                <div
+                    class="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Expenses</h3>
+                        <h2 class="text-xl lg:text-2xl font-bold mt-1 text-slate-800" id="total-expense">₹0.00</h2>
+                    </div>
+                    <div
+                        class="bg-rose-50 text-rose-500 w-12 h-12 rounded-2xl flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-arrow-trend-down"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-1 flex flex-col gap-5 lg:gap-8">
+                <div id="tab-form"
+                    class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group flex-col">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-indigo-500"></div>
+                    <h3 class="text-lg font-bold mb-4 lg:mb-5 border-b pb-3 pl-2">Add Transaction</h3>
+                    <form id="transaction-form" class="space-y-4 lg:space-y-5 pl-2 flex-grow">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-600 mb-1.5">Description</label>
+                            <input type="text" id="desc" placeholder="What was this for?"
+                                class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 focus:bg-white transition-all shadow-sm text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-600 mb-1.5">Amount (₹)</label>
+                            <input type="number" id="amount" inputmode="decimal" min="0.01" step="0.01"
+                                placeholder="0.00"
+                                class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 focus:bg-white transition-all shadow-sm text-sm font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-600 mb-2">Type</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="cursor-pointer group/radio">
+                                    <input type="radio" name="type" value="income" class="peer sr-only">
+                                    <div
+                                        class="text-center px-4 py-3 rounded-xl border-2 border-slate-100 text-slate-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-600 peer-checked:border-emerald-500 transition-all font-semibold hover:bg-slate-50 text-sm">
+                                        <i class="fa-solid fa-plus mr-1"></i> Income
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer group/radio">
+                                    <input type="radio" name="type" value="expense" checked class="peer sr-only">
+                                    <div
+                                        class="text-center px-4 py-3 rounded-xl border-2 border-slate-100 text-slate-500 peer-checked:bg-rose-50 peer-checked:text-rose-600 peer-checked:border-rose-500 transition-all font-semibold hover:bg-slate-50 text-sm">
+                                        <i class="fa-solid fa-minus mr-1"></i> Expense
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit"
+                                class="w-full bg-slate-900 hover:bg-indigo-600 text-white font-semibold py-3.5 rounded-xl transition-all shadow-lg hover:shadow-indigo-200 active:scale-95 duration-200 flex items-center justify-center gap-2">
+                                Save Transaction
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="tab-chart" class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex-col">
+                    <h3 class="text-lg font-bold mb-3 border-b pb-3">Overview</h3>
+                    <div class="relative h-48 lg:h-52 w-full flex justify-center items-center">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-history"
+                class="lg:col-span-2 bg-white rounded-3xl p-5 lg:p-6 shadow-sm border border-slate-100 flex-col">
+                <div class="flex justify-between items-center mb-5 border-b pb-3">
+                    <h3 class="text-lg font-bold">Recent History</h3>
+                    <button id="clear-all"
+                        class="text-xs font-bold px-3 py-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-trash-can"></i> Clear All
+                    </button>
+                </div>
+
+                <div class="overflow-y-auto pr-2 flex-grow min-h-[50vh] lg:min-h-[400px] lg:max-h-[600px]"
+                    id="transaction-list">
+                    <div id="empty-state"
+                        class="h-full flex flex-col items-center justify-center text-slate-400 py-16 hidden">
+                        <div
+                            class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 animate-float border border-slate-100">
+                            <i class="fa-regular fa-folder-open text-3xl text-slate-300"></i>
+                        </div>
+                        <h4 class="text-base font-bold text-slate-600 mb-1">No Transactions Yet</h4>
+                        <p class="text-xs">Your financial journey starts here.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav
+        class="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t border-slate-200 z-[100] lg:hidden pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_20px_rgba(0,0,0,0.03)]">
+        <div class="flex justify-around items-center h-16 px-2 relative">
+            <button onclick="switchTab('dashboard')" id="btn-dashboard"
+                class="nav-btn flex-1 h-full flex flex-col items-center justify-center gap-1 text-indigo-600 transition-colors">
+                <i class="fa-solid fa-chart-pie text-lg mb-0.5"></i>
+                <span class="text-[10px] font-bold tracking-wide">Home</span>
+            </button>
+            <div class="flex-1 flex justify-center">
+                <button onclick="switchTab('add')" id="btn-add"
+                    class="nav-btn flex flex-col items-center justify-center absolute -top-5 transition-transform active:scale-95">
+                    <div
+                        class="bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-indigo-300 border-4 border-slate-50">
+                        <i class="fa-solid fa-plus text-xl"></i>
+                    </div>
+                </button>
+            </div>
+            <button onclick="switchTab('history')" id="btn-history"
+                class="nav-btn flex-1 h-full flex flex-col items-center justify-center gap-1 text-slate-400 transition-colors">
+                <i class="fa-solid fa-receipt text-lg mb-0.5"></i>
+                <span class="text-[10px] font-bold tracking-wide">History</span>
+            </button>
+        </div>
+    </nav>
+
+    <div id="toast-container"
+        class="fixed bottom-24 lg:bottom-6 right-4 lg:right-6 z-[110] flex flex-col gap-3 pointer-events-none"></div>
+
+    <div id="custom-modal" class="fixed inset-0 z-[120] hidden items-center justify-center">
+        <div id="modal-backdrop"
+            class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 opacity-0 cursor-pointer">
+        </div>
+        <div id="modal-content"
+            class="bg-white rounded-3xl p-6 shadow-2xl w-11/12 max-w-sm relative z-10 transform scale-95 opacity-0 transition-all duration-300 border border-slate-100">
+            <div class="text-center">
+                <div
+                    class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-rose-50 mb-4 border-4 border-white shadow-sm relative -mt-10">
+                    <i class="fa-solid fa-triangle-exclamation text-rose-500 text-2xl animate-pulse"></i>
+                </div>
+                <h3 id="modal-title" class="text-xl font-extrabold text-slate-900 mb-2">Confirm Action</h3>
+                <p id="modal-message" class="text-slate-500 mb-6 text-sm">Are you sure you want to proceed?</p>
+                <div class="flex gap-3 justify-center">
+                    <button id="modal-cancel"
+                        class="px-4 py-3 rounded-xl text-slate-600 bg-slate-100 hover:bg-slate-200 font-bold transition-colors w-full text-sm">Cancel</button>
+                    <button id="modal-confirm"
+                        class="px-4 py-3 rounded-xl text-white bg-rose-600 hover:bg-rose-700 font-bold transition-colors w-full shadow-lg shadow-rose-200/50 text-sm">Yes,
+                        Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- PWA Installation Logic ---
+        let deferredPrompt;
+        const installBanner = document.getElementById('install-banner');
+        const installBtn = document.getElementById('install-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBanner.classList.remove('hidden');
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    installBanner.classList.add('hidden');
+                }
+                deferredPrompt = null;
+            }
+        });
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(reg => {
+                console.log('Service Worker Registered');
+            }).catch(err => {
+                console.log('Service Worker Failed', err);
+            });
+        }
+
+        // --- State Management ---
+        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+        let myChart = null;
+        let confirmCallback = null;
+
+        const form = document.getElementById('transaction-form');
+        const descInput = document.getElementById('desc');
+        const amountInput = document.getElementById('amount');
+        const listEl = document.getElementById('transaction-list');
+        const emptyState = document.getElementById('empty-state');
+        const balanceEl = document.getElementById('total-balance');
+        const incomeEl = document.getElementById('total-income');
+        const expenseEl = document.getElementById('total-expense');
+        const clearBtn = document.getElementById('clear-all');
+        const toastContainer = document.getElementById('toast-container');
+
+        const modal = document.getElementById('custom-modal');
+        const modalBackdrop = document.getElementById('modal-backdrop');
+        const modalContent = document.getElementById('modal-content');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCancel = document.getElementById('modal-cancel');
+        const modalConfirm = document.getElementById('modal-confirm');
+
+        // Number Formatting for Indian Rupee
+        const formatINR = (num) => {
+            return num.toLocaleString('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 });
+        };
+
+        amountInput.addEventListener('blur', function () {
+            if (this.value) this.value = parseFloat(this.value).toFixed(2);
+        });
+
+        function switchTab(tabName) {
+            document.body.setAttribute('data-tab', tabName);
+            document.getElementById('btn-dashboard').classList.replace('text-indigo-600', 'text-slate-400');
+            document.getElementById('btn-history').classList.replace('text-indigo-600', 'text-slate-400');
+            if (tabName === 'dashboard') {
+                document.getElementById('btn-dashboard').classList.replace('text-slate-400', 'text-indigo-600');
+                if (myChart) setTimeout(() => myChart.resize(), 50);
+            }
+            else if (tabName === 'history') {
+                document.getElementById('btn-history').classList.replace('text-slate-400', 'text-indigo-600');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showModal(title, message, onConfirm) {
+            modalTitle.innerText = title;
+            modalMessage.innerText = message;
+            confirmCallback = onConfirm;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            requestAnimationFrame(() => {
+                modalBackdrop.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            });
+        }
+
+        function closeModal() {
+            modalBackdrop.classList.add('opacity-0');
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                confirmCallback = null;
+            }, 300);
+        }
+
+        modalCancel.addEventListener('click', closeModal);
+        modalBackdrop.addEventListener('click', closeModal);
+        modalConfirm.addEventListener('click', () => {
+            if (confirmCallback) confirmCallback();
+            closeModal();
+        });
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            let styleClasses = '', iconClass = '';
+            if (type === 'success') { styleClasses = 'bg-emerald-600 text-white'; iconClass = 'fa-check-circle'; }
+            else if (type === 'delete') { styleClasses = 'bg-slate-800 text-white'; iconClass = 'fa-trash-can'; }
+            else if (type === 'error') { styleClasses = 'bg-rose-500 text-white'; iconClass = 'fa-triangle-exclamation'; }
+            else if (type === 'info') { styleClasses = 'bg-indigo-600 text-white'; iconClass = 'fa-info-circle'; }
+
+            toast.className = `flex items-center gap-3 px-4 py-3.5 rounded-2xl shadow-xl shadow-slate-300/30 toast-enter pointer-events-auto ${styleClasses}`;
+            toast.innerHTML = `<i class="fa-solid ${iconClass} text-lg"></i><span class="font-bold text-[13px] tracking-wide">${message}</span>`;
+            toastContainer.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.replace('toast-enter', 'toast-exit');
+                toast.addEventListener('animationend', () => toast.remove());
+            }, 3000);
+        }
+
+        function init() {
+            updateUI();
+            initChart();
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const desc = descInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            const type = document.querySelector('input[name="type"]:checked').value;
+
+            if (!desc || isNaN(amount) || amount <= 0) {
+                showToast('Please enter a valid description and amount!', 'error');
+                return;
+            }
+
+            const transaction = {
+                id: generateID(), desc, amount, type,
+                date: new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })
+            };
+
+            transactions.unshift(transaction);
+            saveData();
+            updateUI();
+            form.reset();
+            document.querySelector('input[value="expense"]').checked = true;
+            showToast('Added Successfully!', 'success');
+
+            if (window.innerWidth < 1024) setTimeout(() => switchTab('history'), 300);
+        });
+
+        function confirmDelete(id) {
+            showModal("Delete Item", "Are you sure you want to delete this record? This action cannot be undone.", () => {
+                transactions = transactions.filter(t => t.id !== id);
+                saveData();
+                updateUI();
+                showToast('Transaction removed', 'delete');
+            });
+        }
+
+        clearBtn.addEventListener('click', () => {
+            if (transactions.length === 0) { showToast('Your list is already empty.', 'info'); return; }
+            showModal("Clear History", "Are you sure you want to wipe ALL your financial records? This is permanent.", () => {
+                transactions = [];
+                saveData();
+                updateUI();
+                showToast('History cleared completely', 'info');
+            });
+        });
+
+        function updateUI() {
+            renderList();
+            updateSummary();
+            if (myChart) updateChart();
+        }
+
+        function renderList() {
+            const items = listEl.querySelectorAll('.transaction-item');
+            items.forEach(item => item.remove());
+
+            if (transactions.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            transactions.forEach((t, index) => {
+                const isIncome = t.type === 'income';
+                const sign = isIncome ? '+' : '-';
+                const colorClass = isIncome ? 'text-emerald-600' : 'text-rose-600';
+                const bgClass = isIncome ? 'bg-emerald-50' : 'bg-rose-50';
+                const icon = isIncome ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down';
+
+                const div = document.createElement('div');
+                div.className = `transaction-item flex items-center justify-between p-3.5 lg:p-4 mb-3 rounded-2xl border border-slate-100 bg-white hover:bg-slate-50 transition-all duration-300 hover:shadow-md group`;
+                div.style.animation = `fadeUp 0.4s ease-out forwards`;
+                div.style.animationDelay = `${Math.min(index * 0.05, 0.4)}s`;
+                div.style.opacity = '0';
+
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 lg:gap-4">
+                        <div class="${bgClass} ${colorClass} w-11 h-11 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 duration-300">
+                            <i class="fa-solid ${icon}"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-[14px] lg:text-[15px] leading-tight">${t.desc}</h4>
+                            <p class="text-[11px] text-slate-400 font-medium mt-1"><i class="fa-regular fa-calendar mr-1"></i>${t.date}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 lg:gap-3">
+                        <div class="text-right">
+                            <span class="font-bold text-base lg:text-lg ${colorClass}">${sign}${formatINR(t.amount)}</span>
+                        </div>
+                        <button onclick="confirmDelete(${t.id})" class="w-8 h-8 rounded-full bg-slate-50 text-slate-300 hover:bg-rose-100 hover:text-rose-600 transition-colors flex items-center justify-center lg:opacity-0 lg:group-hover:opacity-100 focus:opacity-100 active:scale-90">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                listEl.appendChild(div);
+            });
+        }
+
+        function updateSummary() {
+            const income = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+            const expense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+            const balance = income - expense;
+
+            balanceEl.classList.remove('animate-pop');
+            void balanceEl.offsetWidth;
+            balanceEl.classList.add('animate-pop');
+
+            balanceEl.innerText = formatINR(balance);
+            incomeEl.innerText = formatINR(income);
+            expenseEl.innerText = formatINR(expense);
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: getChartData(),
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '78%',
+                    animation: { animateScale: true, animateRotate: true, duration: 800 },
+                    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15, font: { family: "'Inter', sans-serif", weight: '600', size: 11 } } } }
+                }
+            });
+        }
+
+        function updateChart() {
+            myChart.data = getChartData();
+            myChart.update();
+        }
+
+        function getChartData() {
+            const income = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+            const expense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+
+            if (income === 0 && expense === 0) return { labels: ['No Activity'], datasets: [{ data: [1], backgroundColor: ['#f8fafc'], borderWidth: 0 }] };
+            return {
+                labels: ['Income', 'Expenses'],
+                datasets: [{ data: [income, expense], backgroundColor: ['#10b981', '#f43f5e'], hoverBackgroundColor: ['#059669', '#e11d48'], hoverOffset: 4, borderWidth: 2, borderColor: '#ffffff' }]
+            };
+        }
+
+        function generateID() { return Math.floor(Math.random() * 100000000); }
+        function saveData() { localStorage.setItem('transactions', JSON.stringify(transactions)); }
+
+        init();
+    </script>
+</body>
+
+</html>
