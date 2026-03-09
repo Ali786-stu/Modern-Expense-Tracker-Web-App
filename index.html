@@ -156,17 +156,7 @@
 
     <div class="h-1.5 bg-indigo-600 w-full fixed top-0 z-50"></div>
 
-    <div id="install-banner"
-        class="hidden bg-indigo-900 text-white px-4 py-3 flex justify-between items-center shadow-md animate-slide-in mt-1.5">
-        <div class="flex items-center gap-3">
-            <i class="fa-solid fa-download text-indigo-300"></i>
-            <span class="text-sm font-medium">Install App on your Home Screen</span>
-        </div>
-        <button id="install-btn"
-            class="bg-indigo-500 hover:bg-indigo-400 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-colors">Install</button>
-    </div>
-
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 lg:py-10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 lg:py-10 mt-2">
         <header class="mb-6 lg:mb-10 text-center" style="animation: fadeUp 0.4s ease-out forwards;">
             <h1 class="text-2xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">Expense Tracker</h1>
             <p class="text-slate-500 mt-1 text-sm lg:text-base font-medium">Manage your finances like a pro</p>
@@ -336,29 +326,7 @@
     </div>
 
     <script>
-        // --- PWA Installation Logic ---
-        let deferredPrompt;
-        const installBanner = document.getElementById('install-banner');
-        const installBtn = document.getElementById('install-btn');
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            installBanner.classList.remove('hidden');
-        });
-
-        installBtn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    installBanner.classList.add('hidden');
-                }
-                deferredPrompt = null;
-            }
-        });
-
-        // Register Service Worker
+        // --- Service Worker Logic ---
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').then(reg => {
                 console.log('Service Worker Registered');
@@ -366,6 +334,8 @@
                 console.log('Service Worker Failed', err);
             });
         }
+        // Custom Banner is removed. Browser will now automatically handle the PWA prompt
+        // naturally based on its own heuristics (Native UI).
 
         // --- State Management ---
         let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
