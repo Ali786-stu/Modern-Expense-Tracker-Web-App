@@ -586,15 +586,31 @@
             karjaModal.classList.remove('hidden'); karjaModal.classList.add('flex');
             requestAnimationFrame(() => {
                 karjaBackdrop.classList.remove('opacity-0');
-                if (window.innerWidth < 640) karjaContent.classList.remove('translate-y-full');
-                else { karjaContent.classList.remove('scale-95', 'opacity-0'); karjaContent.classList.add('scale-100', 'opacity-100'); }
+                // Niche ki 2 lines add ki hain form ko visible karne ke liye
+                karjaContent.classList.remove('opacity-0');
+                karjaContent.classList.add('opacity-100');
+
+                if (window.innerWidth < 640) {
+                    karjaContent.classList.remove('translate-y-full');
+                } else {
+                    karjaContent.classList.remove('scale-95');
+                    karjaContent.classList.add('scale-100');
+                }
             });
         }
 
         function closeKarjaModal() {
             karjaBackdrop.classList.add('opacity-0');
-            if (window.innerWidth < 640) karjaContent.classList.add('translate-y-full');
-            else { karjaContent.classList.remove('scale-100', 'opacity-100'); karjaContent.classList.add('scale-95', 'opacity-0'); }
+            // Form ko wapas hide karne ka code
+            karjaContent.classList.remove('opacity-100');
+            karjaContent.classList.add('opacity-0');
+
+            if (window.innerWidth < 640) {
+                karjaContent.classList.add('translate-y-full');
+            } else {
+                karjaContent.classList.remove('scale-100');
+                karjaContent.classList.add('scale-95');
+            }
             setTimeout(() => { karjaModal.classList.add('hidden'); karjaModal.classList.remove('flex'); }, 300);
         }
 
